@@ -36,30 +36,47 @@ print(f"Working with file: {args.path}\n"
 ## I think this is because we are running python from a venv and it can't
 ## locate the installed ffmpeg. Not sure if this is worth troubleshooting.
 
-
+fpaths = []
 match filetype:
     case "mp3":
         print("mp3")
     case "mp4":
         print("mp4")
         audio = AudioFileClip(args.path)
-        trimmed_audio = audio.subclip(0, 15)
-        trimmed_audio.write_audiofile("trimmed.mp3")
-        print("Trimmed audio saved as trimmed.mp3")
+        print(f"audio.duration: {audio.duration}")
+        # Take 15 seconds samples every 60 seconds:
+        times = range(0, int(audio.duration), 60)
+        times = [(t, t+15) for t in times if t+15 < audio.duration]
+        for start, end in times:
+            fpath = f"tmp/trimmed_{start}-{end}.mp3"
+            trimmed_audio = audio.subclip(start, end)
+            trimmed_audio.write_audiofile(fpath)
+            fpaths.append(fpath)
+            print(f"Trimmed audio saved as tmp/trimmed_{start}-{end}.mp3")
     case _:
         assert False, "Unknown file type"
 
 
+songs = set()
 
-async def main():
+async def shazamfetch():
     shazam = Shazam()
-    song = await shazam.recognize("trimmed.mp3")
-    pprint(song)
+    for i, fpath in enumerate(fpaths):
+        print(f"Working on {i+1}/{len(fpaths)}\n")
+        song = await shazam.recognize(fpath)
+        if not song:
+            print("No match found.")
+            continue
+        songname = f"{song.get('track').get('title')} - {song.get('track').get('subtitle')}"
+        songs.add(songname)
+        pprint(songname)
+        # pprint(song)
 
 
+asyncio.run(shazamfetch())
+print(songs)
 
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(main())
 
 print("I do nothing yet...")
