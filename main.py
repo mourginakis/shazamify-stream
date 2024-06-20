@@ -23,6 +23,20 @@ print(f"Working with file: {args.path}\n"
       f"File type: .{filetype}\n")
 
 
+## Note:
+## You can use the trimmed audio in memory instead of writing to disk
+## by using the following code:
+## import numpy as np
+## trimmed_audio = audio.subclip(0, 15)
+## sound_array = trimmed_audio.to_soundarray(tt=10, fps=16000)
+## sound_bytes = sound_array.astype(np.int16).tobytes()
+## song = await shazam.recognize(sound_bytes)
+## However, I keep getting the error on the last line due to
+## "SignatureError: FFmpeg not found or failed to convert audio"
+## I think this is because we are running python from a venv and it can't
+## locate the installed ffmpeg. Not sure if this is worth troubleshooting.
+
+
 match filetype:
     case "mp3":
         print("mp3")
@@ -30,7 +44,6 @@ match filetype:
         print("mp4")
         audio = AudioFileClip(args.path)
         trimmed_audio = audio.subclip(0, 15)
-        # TODO: Store this in memory instead of writing to disk
         trimmed_audio.write_audiofile("trimmed.mp3")
         print("Trimmed audio saved as trimmed.mp3")
     case _:
@@ -40,7 +53,6 @@ match filetype:
 
 async def main():
     shazam = Shazam()
-    # TODO: Use the trimmed audio in memory instead of reading from disk
     song = await shazam.recognize("trimmed.mp3")
     pprint(song)
 
