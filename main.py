@@ -63,11 +63,18 @@ async def shazamfetch():
     shazam = Shazam()
     for i, fpath in enumerate(fpaths):
         print(f"Working on {i+1}/{len(fpaths)}\n")
-        song = await shazam.recognize(fpath)
-        if not song:
+        await asyncio.sleep(5) # is this rate limited?
+        try:
+            song = await asyncio.wait_for(shazam.recognize(fpath), timeout=5.0)
+        except asyncio.TimeoutError:
+            print("TimeoutError: No match found.")
+            continue
+        # song = await shazam.recognize(fpath)
+        try:
+            songname = f"{song.get('track').get('title')} - {song.get('track').get('subtitle')}"
+        except AttributeError:
             print("No match found.")
             continue
-        songname = f"{song.get('track').get('title')} - {song.get('track').get('subtitle')}"
         songs.add(songname)
         pprint(songname)
         # pprint(song)
