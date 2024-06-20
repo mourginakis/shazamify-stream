@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
+## Imports
 import os
 import argparse
+import asyncio
+from moviepy.editor import VideoFileClip
+from moviepy.editor import AudioFileClip
+from pprint import pprint
 
-import shazamio
+
+from shazamio import Shazam
 
 ## Parse Args
 parser = argparse.ArgumentParser()
@@ -17,5 +23,31 @@ print(f"Working with file: {args.path}\n"
       f"File type: .{filetype}\n")
 
 
+match filetype:
+    case "mp3":
+        print("mp3")
+    case "mp4":
+        print("mp4")
+        audio = AudioFileClip(args.path)
+        trimmed_audio = audio.subclip(0, 15)
+        # TODO: Store this in memory instead of writing to disk
+        trimmed_audio.write_audiofile("trimmed.mp3")
+        print("Trimmed audio saved as trimmed.mp3")
+    case _:
+        assert False, "Unknown file type"
+
+
+
+async def main():
+    shazam = Shazam()
+    # TODO: Use the trimmed audio in memory instead of reading from disk
+    song = await shazam.recognize("trimmed.mp3")
+    pprint(song)
+
+
+
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
 
 print("I do nothing yet...")
